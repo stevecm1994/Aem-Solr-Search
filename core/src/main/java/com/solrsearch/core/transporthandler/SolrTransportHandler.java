@@ -48,6 +48,9 @@ public class SolrTransportHandler implements TransportHandler{
 		return handleFlag;
 	}
 
+	/**
+	 * Redirects all the events received at the transport handler to SolrService for processing
+	 */
 	@Override
 	public ReplicationResult deliver(TransportContext ctx, ReplicationTransaction tx) throws ReplicationException {
 		LOGGER.info("Start of deliver method");
@@ -66,6 +69,11 @@ public class SolrTransportHandler implements TransportHandler{
 		return result;
 	}
 	
+	
+	/**
+	 * @return ResourceResolver
+	 * Obtaining Service ResourceResolver using system user "solrserviceuser"
+	 */
 	private ResourceResolver getResourceResolver() {
 		
 		try {

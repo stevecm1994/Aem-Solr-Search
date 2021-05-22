@@ -38,65 +38,87 @@ import com.day.cq.wcm.api.WCMMode;
 
 @Component(service = SolrService.class)
 public class SolrService {
-	
+
 	protected final Logger logger = LoggerFactory.getLogger(this.getClass());
-	
+
 	@Reference
 	private RequestResponseFactory requestResponseFactory;
-	
+
 	@Reference
 	private SlingRequestProcessor requestProcessor;
-	
+
 	@Reference
 	private SolrServerConfiguration solrConfigurations;
-	
-	
-	
-	public ReplicationResult updateSolrIndex(ResourceResolver resolver, final String actionType, final ReplicationAction replicationAction) {
-		
+
+	/**
+	 * @param resolver
+	 * @param actionType
+	 * @param replicationAction
+	 * @return ReplicationResult-->true for all DEACTIVATE/DELETE events , ReplicationResult-->true/false for all ACTIVATE events
+	 * Entry block for all transport handler events
+	 * Collection Names identified using page paths
+	 * Distinguish ACTIVATE/DEACTIVATE/DELETE events and perform the respective functions accordingly
+	 */
+	public ReplicationResult updateSolrIndex(ResourceResolver resolver, final String actionType,
+			final ReplicationAction replicationAction) {
+
 		ReplicationResult result = new ReplicationResult(true, 200, "OK");
 		SolrClient solrClient = solrConfigurations.getAuthenticateSolrClient();
-		if(null != resolver) {
-			if(actionType.equals("DEACTIVATE") || actionType.equals("DELETE")) {
+		if (null != resolver) {
+			if (actionType.equals("DEACTIVATE") || actionType.equals("DELETE")) {
 				final Set<String> pagePaths = new HashSet<>(Arrays.asList(replicationAction.getPaths()));
-				for(String pagePath : pagePaths) {
+				for (String pagePath : pagePaths) {
 					String collectionName = solrConfigurations.getSolrCollection(pagePath);
-					logger.info("Collection Name for deactivateion of pgae {} = {}",pagePath,collectionName);
-					if(!StringUtils.isEmpty(collectionName)) {
-						delete(pagePath,solrClient,collectionName);
+					logger.info("Collection Name for deactivateion of pgae {} = {}", pagePath, collectionName);
+					if (!StringUtils.isEmpty(collectionName)) {
+						delete(pagePath, solrClient, collectionName);
 					}
 				}
-				
-			}else if(actionType.equals("ACTIVATE")) {
+
+			} else if (actionType.equals("ACTIVATE")) {
 				final String pagePath = replicationAction.getPath();
 				String collectionName = solrConfigurations.getSolrCollection(pagePath);
-				logger.info("Collection Name for activation of pgae {} = {}",pagePath,collectionName);
-				if(!StringUtils.isEmpty(collectionName)) {
-					result = index(pagePath,resolver,collectionName) ?  result : new ReplicationResult(false, 400, "Bad Request");
-				}				
-			}			
-		}		
-		return result;		
+				logger.info("Collection Name for activation of pgae {} = {}", pagePath, collectionName);
+				if (!StringUtils.isEmpty(collectionName)) {
+					result = index(pagePath, resolver, collectionName) ? result
+							: new ReplicationResult(false, 400, "Bad Request");
+				}
+			}
+		}
+		return result;
 	}
-	
-	void delete(String pagePath,SolrClient solrClient,String collectionName) {		
-			try {
-				if(!pagePath.isEmpty() && !StringUtils.isEmpty(collectionName)) {
-					solrClient.deleteById(collectionName, pagePath);
-					solrClient.commit(collectionName);
-				}				
-			}catch (SolrServerException | IOException e) {
-				logger.error("deleteDocumentFromSolr : Exception occurred {}", e);
-			}		
+
+	/**
+	 * @param pagePath
+	 * @param solrClient
+	 * @param collectionName
+	 * Delete the document from the Solr server using pagePath as key identifier 
+	 */
+	void delete(String pagePath, SolrClient solrClient, String collectionName) {
+		try {
+			if (!pagePath.isEmpty() && !StringUtils.isEmpty(collectionName)) {
+				solrClient.deleteById(collectionName, pagePath);
+				solrClient.commit(collectionName);
+			}
+		} catch (SolrServerException | IOException e) {
+			logger.error("deleteDocumentFromSolr : Exception occurred {}", e);
+		}
 	}
-	
-	boolean index(String pagePath, ResourceResolver resolver,String collectionName) {
+
+	/**
+	 * @param pagePath
+	 * @param resolver
+	 * @param collectionName
+	 * @return
+	 * Method block to extract the data to be indexed from Page Path
+	 */
+	boolean index(String pagePath, ResourceResolver resolver, String collectionName) {
 		boolean isIndexed = false;
 		logger.info("page path : {}", pagePath);
 		final PageManager pageManager = resolver.adaptTo(PageManager.class);
 		final Page actionPage = pageManager == null ? null : pageManager.getPage(pagePath);
-		try {			
-			if(null!=actionPage && !StringUtils.isEmpty(collectionName)) {								
+		try {
+			if (null != actionPage && !StringUtils.isEmpty(collectionName)) {
 				String requestPath = actionPage.getPath() + ".html";
 				logger.debug("The request path is : {}", requestPath);
 				HttpServletRequest request = requestResponseFactory.createRequest("GET", requestPath);
@@ -105,19 +127,28 @@ public class SolrService {
 				HttpServletResponse response = requestResponseFactory.createResponse(out);
 				requestProcessor.processRequest(request, response, resolver);
 				String htmlContent = out.toString();
-				final SolrInputDocument doc = parseHtml(actionPage, htmlContent, resolver, collectionName,true);
-				isIndexed = indexToSolr(actionPage, resolver, collectionName, doc);				
-			}			
-		}catch (Exception e) {
+				final SolrInputDocument doc = parseHtml(actionPage, htmlContent, resolver, collectionName, true);
+				isIndexed = indexToSolr(actionPage, resolver, collectionName, doc);
+			}
+		} catch (Exception e) {
 			logger.error("Error indexing {} to Solr {}", actionPage.getPath(), e);
 		}
-		
+
 		return isIndexed;
 	}
-	
+
+	/**
+	 * @param page
+	 * @param htmlContent
+	 * @param resourceResolver
+	 * @param domainUrl
+	 * @param isReplicateIndexing
+	 * @return
+	 * Prepares the SolrInputDocument for each page that is Activated
+	 */
 	public SolrInputDocument parseHtml(Page page, String htmlContent, ResourceResolver resourceResolver,
 			String domainUrl, boolean isReplicateIndexing) {
-		
+
 		ValueMap pageProperties = page.getProperties();
 		final SolrInputDocument solrDocument = new SolrInputDocument();
 		Document document = Jsoup.parse(htmlContent);
@@ -137,7 +168,13 @@ public class SolrService {
 		solrDocument.addField("publishedDate", getPagePublishedDate(pageProperties, isReplicateIndexing));
 		return solrDocument;
 	}
-	
+
+	/**
+	 * @param element
+	 * @return
+	 * Method block to remove unnecessary HTML elements like header and footer from getting indexed to Solr
+	 * Can include more HTML elements that needs to be excluded to the htmlTagsBlackList if necessary
+	 */
 	private boolean isHtmlElementBlackListed(Element element) {
 		List<String> htmlTagsBlackList = Arrays.asList("header", "footer");
 		boolean isExists = false;
@@ -146,7 +183,13 @@ public class SolrService {
 		}
 		return isExists;
 	}
-	
+
+	/**
+	 * @param pageProperties
+	 * @param isReplicateIndexing
+	 * @return
+	 * Returns cq:lastReplicated Date from Jcr properties
+	 */
 	private String getPagePublishedDate(ValueMap pageProperties, boolean isReplicateIndexing) {
 		final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
@@ -157,7 +200,15 @@ public class SolrService {
 			return ZonedDateTime.parse(simpleDateFormat.format(new Date().getTime()) + "Z").toInstant().toString();
 		}
 	}
-	
+
+	/**
+	 * @param actionPage
+	 * @param resourceResolver
+	 * @param collectionName
+	 * @param docs
+	 * @return
+	 * Method block to index SolrInputDocument to Solr and commit the changes
+	 */
 	protected boolean indexToSolr(Page actionPage, ResourceResolver resourceResolver, String collectionName,
 			SolrInputDocument... docs) {
 		boolean isIndexed = false;
@@ -171,10 +222,10 @@ public class SolrService {
 					solrClient.add(collectionName, doc);
 					solrClient.commit(collectionName);
 					isIndexed = true;
-				}				
-			}catch (SolrServerException | IOException e) {
+				}
+			} catch (SolrServerException | IOException e) {
 				logger.error("Error indexing {} to Solr {}", actionPage.getPath(), e);
-			}catch (Exception e) {
+			} catch (Exception e) {
 				logger.error("Error indexing {} to Solr {}", actionPage.getPath(), e);
 			}
 		}

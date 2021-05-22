@@ -20,11 +20,27 @@ public class AuthenticateSolrClient extends HttpSolrClient {
 	
 	private static final String UTF_8 = StandardCharsets.UTF_8.name();
 	
+
+	/**
+	 * @param baseURL
+	 * @param solrCredentials
+	 * Instantiates a new authenticate http solr client.
+	 */
 	public AuthenticateSolrClient(String baseURL,String solrCredentials) {		
 		super(baseURL);
 		this.solrCredentials = solrCredentials;
 	}
 	
+	/**
+	 * Override request method in the extended base class
+	 * 
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.apache.solr.client.solrj.impl.HttpSolrClient#request(org.apache.solr.
+	 * client.solrj.SolrRequest, java.lang.String)
+	 * 
+	 */
 	@Override
 	public NamedList<Object> request(final SolrRequest request, String collection)
 			throws SolrServerException, IOException {
@@ -35,6 +51,18 @@ public class AuthenticateSolrClient extends HttpSolrClient {
 		return request(request, responseParser, collection);
 	}
 	
+	/**
+	 * Override request method in the extended base class
+	 * Authenticates the Solr client using the custom user name and password
+	 * 
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.apache.solr.client.solrj.impl.HttpSolrClient#request(org.apache.solr.
+	 * client.solrj.SolrRequest, org.apache.solr.client.solrj.ResponseParser,
+	 * java.lang.String)
+	 * 
+	 */
 	public NamedList<Object> request(final SolrRequest request, final ResponseParser processor, String collection)
 			throws SolrServerException, IOException {
 		HttpRequestBase method = createMethod(request, collection);

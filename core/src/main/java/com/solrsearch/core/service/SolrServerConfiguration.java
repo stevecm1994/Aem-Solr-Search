@@ -30,7 +30,8 @@ public class SolrServerConfiguration {
 		String solr_core_url() default StringUtils.EMPTY;
 		
 		@AttributeDefinition(name = "Solr Collections",
-		              description = "Specify the collection name to index the data")
+		              description = "Specify the collection name corresponding to the root content paths in the "
+		              		+ "format {root content path : collection name}. Ex : content/solrsearch/en=solrsearch_en_collection ")
 		String[] collection_names() default StringUtils.EMPTY;
 		
 		@AttributeDefinition(name = "Solr Credentials",
@@ -62,7 +63,7 @@ public class SolrServerConfiguration {
     protected void activate(final Config config) {
 		solrCoreUrl = config.solr_core_url();
 		solrCredentials = config.solr_credentials();
-		setSolrCollectionsAndDomainHashSet(config.collection_names());
+		setSolrCollectionsHashMap(config.collection_names());
 		final int defaultMaxPerRoute = config.http_max_connection_per_route();
 		final int maxTotal = config.http_max_total_connections();
 		final PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
@@ -80,6 +81,11 @@ public class SolrServerConfiguration {
 		return new AuthenticateSolrClient(solrCoreUrl, solrCredentials);
 	}
 	
+	/**
+	 * @param pagePath
+	 * @return Collection matching for the page path
+	 * Determines the collection name from the saved configuration and the incoming page path
+	 */
 	public String getSolrCollection(String pagePath) {
 		String[] splits = pagePath.split("/");
 		String key = splits[1]+"/"+splits[2]+ "/" + splits[3];
@@ -87,7 +93,13 @@ public class SolrServerConfiguration {
 		return solrCollections.get(key);
 	}
 		
-	private void setSolrCollectionsAndDomainHashSet(String[] collectionNames) {
+	/**
+	 * @param collectionNames
+	 * Converting collection array in the configuration to HashMap
+	 * Key : root page path , Value : Collection Name
+	 * Example : key : content/solrsearch/en , Value : solrsearch_en_collection
+	 */
+	private void setSolrCollectionsHashMap(String[] collectionNames) {
 		this.solrCollections = new HashMap<>();
 		for(String collectionName : collectionNames) {
 			String values [] = collectionName.split("=");
