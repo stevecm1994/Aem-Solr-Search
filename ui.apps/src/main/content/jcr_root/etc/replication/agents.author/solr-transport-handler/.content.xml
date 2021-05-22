@@ -17,7 +17,7 @@
         retryDelay="60000"
         serializationType="durbo"
         ssl="default"
-        transportUri="aemsolr://host:8983/solr"
+        transportUri="solr://host:8983/solr"
         triggerOnOffTime="true"
         triggerReceive="true"/>
 </jcr:root>
