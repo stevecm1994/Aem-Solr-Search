@@ -1,6 +1,13 @@
 package com.solrsearch.core.transporthandler;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ResourceResolverFactory;
+import org.osgi.framework.Constants;
+import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +21,10 @@ import com.day.cq.replication.TransportContext;
 import com.day.cq.replication.TransportHandler;
 import com.solrsearch.core.service.SolrService;
 
-
+@Component(service = TransportHandler.class,
+property = {
+        Constants.SERVICE_RANKING + ":Integer=-700"
+})
 public class SolrTransportHandler implements TransportHandler{
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(SolrTransportHandler.class);
@@ -23,6 +33,9 @@ public class SolrTransportHandler implements TransportHandler{
 	
 	@Reference
 	SolrService solrService;
+	
+	@Reference
+	public ResourceResolverFactory rrFactory;
 
 	@Override
 	public boolean canHandle(AgentConfig config) {
@@ -41,6 +54,7 @@ public class SolrTransportHandler implements TransportHandler{
 		ResourceResolver resolver = null;
 		ReplicationResult result = null;
 		try {
+			resolver = getResourceResolver();
 			final ReplicationAction replicationAction = tx.getAction();
 			final String actionType = replicationAction.getType().toString();
 			result = solrService.updateSolrIndex(resolver, actionType, replicationAction);		
@@ -50,6 +64,18 @@ public class SolrTransportHandler implements TransportHandler{
             }
 		}
 		return result;
+	}
+	
+	private ResourceResolver getResourceResolver() {
+		
+		try {
+			Map<String, Object> param = new HashMap<>();
+			param.put(ResourceResolverFactory.SUBSERVICE, "solrserviceuser");
+			return rrFactory.getServiceResourceResolver(param);
+		} catch (LoginException e) {
+			LOGGER.error("Error in otaining resource resolver {} ",e);
+		}
+		return null;
 	}
 
 }

@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -52,44 +51,50 @@ public class SolrService {
 	private SolrServerConfiguration solrConfigurations;
 	
 	
+	
 	public ReplicationResult updateSolrIndex(ResourceResolver resolver, final String actionType, final ReplicationAction replicationAction) {
 		
 		ReplicationResult result = new ReplicationResult(true, 200, "OK");
-		final PageManager pageManager = resolver.adaptTo(PageManager.class);
-		if(actionType.equals("DEACTIVATE") || actionType.equals("DELETE")) {
-			final Set<String> pagePaths = new HashSet<>(Arrays.asList(replicationAction.getPaths()));
-			result = delete(pagePaths,resolver) ? result : new ReplicationResult(false, 400, "Bad Request");
-		}else if(actionType.equals("ACTIVATE")) {
-			final String pagePath = replicationAction.getPath();
-			final Page actionPage = pageManager == null ? null : pageManager.getPage(pagePath);
-			result = index(actionPage,resolver) ?  result : new ReplicationResult(false, 400, "Bad Request");
-		}
+		SolrClient solrClient = solrConfigurations.getAuthenticateSolrClient();
+		if(null != resolver) {
+			if(actionType.equals("DEACTIVATE") || actionType.equals("DELETE")) {
+				final Set<String> pagePaths = new HashSet<>(Arrays.asList(replicationAction.getPaths()));
+				for(String pagePath : pagePaths) {
+					String collectionName = solrConfigurations.getSolrCollection(pagePath);
+					logger.info("Collection Name for deactivateion of pgae {} = {}",pagePath,collectionName);
+					if(!StringUtils.isEmpty(collectionName)) {
+						delete(pagePath,solrClient,collectionName);
+					}
+				}
+				
+			}else if(actionType.equals("ACTIVATE")) {
+				final String pagePath = replicationAction.getPath();
+				String collectionName = solrConfigurations.getSolrCollection(pagePath);
+				logger.info("Collection Name for activation of pgae {} = {}",pagePath,collectionName);
+				if(!StringUtils.isEmpty(collectionName)) {
+					result = index(pagePath,resolver,collectionName) ?  result : new ReplicationResult(false, 400, "Bad Request");
+				}				
+			}			
+		}		
 		return result;		
 	}
 	
-	boolean delete(final Set<String> pagePaths ,ResourceResolver resourceResolver ) {
-		boolean isDeleted = false;
-		
-		String collectionName = solrConfigurations.getSolrCollection();
-		SolrClient solrClient = solrConfigurations.getAuthenticateSolrClient();
-		List<String> pagePathsList = new ArrayList<>(pagePaths);
-		try {
-			if(!pagePaths.isEmpty() && !StringUtils.isEmpty(collectionName)) {
-				solrClient.deleteById(collectionName, pagePathsList);
-				solrClient.commit(collectionName);
-				isDeleted = true;
-			}
-			
-		}catch (SolrServerException | IOException e) {
-			logger.error("deleteDocumentFromSolr : Exception occurred {}", e);
-		}
-		return isDeleted;		
+	void delete(String pagePath,SolrClient solrClient,String collectionName) {		
+			try {
+				if(!pagePath.isEmpty() && !StringUtils.isEmpty(collectionName)) {
+					solrClient.deleteById(collectionName, pagePath);
+					solrClient.commit(collectionName);
+				}				
+			}catch (SolrServerException | IOException e) {
+				logger.error("deleteDocumentFromSolr : Exception occurred {}", e);
+			}		
 	}
 	
-	boolean index(Page actionPage, ResourceResolver resourceResolver) {
+	boolean index(String pagePath, ResourceResolver resolver,String collectionName) {
 		boolean isIndexed = false;
-		logger.info("page path : {}", actionPage.getPath());
-		String collectionName = solrConfigurations.getSolrCollection();
+		logger.info("page path : {}", pagePath);
+		final PageManager pageManager = resolver.adaptTo(PageManager.class);
+		final Page actionPage = pageManager == null ? null : pageManager.getPage(pagePath);
 		try {			
 			if(null!=actionPage && !StringUtils.isEmpty(collectionName)) {								
 				String requestPath = actionPage.getPath() + ".html";
@@ -98,10 +103,10 @@ public class SolrService {
 				WCMMode.DISABLED.toRequest(request);
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
 				HttpServletResponse response = requestResponseFactory.createResponse(out);
-				requestProcessor.processRequest(request, response, resourceResolver);
+				requestProcessor.processRequest(request, response, resolver);
 				String htmlContent = out.toString();
-				final SolrInputDocument doc = parseHtml(actionPage, htmlContent, resourceResolver, collectionName,true);
-				isIndexed = indexToSolr(actionPage, resourceResolver, collectionName, doc);				
+				final SolrInputDocument doc = parseHtml(actionPage, htmlContent, resolver, collectionName,true);
+				isIndexed = indexToSolr(actionPage, resolver, collectionName, doc);				
 			}			
 		}catch (Exception e) {
 			logger.error("Error indexing {} to Solr {}", actionPage.getPath(), e);
