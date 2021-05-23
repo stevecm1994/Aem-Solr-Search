@@ -18,10 +18,10 @@ http://localhost:4502/apps/solrsearchApi/GET.servlet?searchType=search&collectio
 
 ## Solr Config files
 
-solrconfig folder contain necessary solr configuration files for creation of both French and English collections .
-How to Use  ? : After setting up solr server , copy the configuration files (managed-schema,solrconfig) to the conf folder of the respective core and reload the core for the changes to reflect.
-*managed-schema : Defines data variables we are indexing to Solr using OSGI service
-*solrconfig : Defines the default as well as custom handlers in Solr like Search Handler , Spell Check Handler and so on.
+* solrconfig folder contain necessary solr configuration files for creation of both French and English collections .
+* How to Use  ? : After setting up solr server , copy the configuration files (managed-schema,solrconfig) to the conf folder of the respective core and reload the core for the changes to reflect.
+* managed-schema : Defines data variables we are indexing to Solr using OSGI service
+* solrconfig : Defines the default as well as custom handlers in Solr like Search Handler , Spell Check Handler and so on.
 
 
 ## How to build
