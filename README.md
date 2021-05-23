@@ -10,11 +10,11 @@ The main parts of the template are:
 * ui.apps: contains the /apps (and /etc) parts of the project, ie JS&CSS clientlibs, components, templates, runmode specific configs as well as Hobbes-tests
 * ui.content: contains sample content using the components from the ui.apps
 
-## Servlet Proxy Layer
+## Servlet Proxy Layer for fetching Solr data
 
-* Fetching Data from English Solr collection : http://localhost:4502/apps/solrsearchApi/GET.servlet?searchType=search&collectionName=solrsearch_en_collection&q=*
+* Fetching Data from English Solr collection : http://localhost:4502/bin/solrsearch/GET.servlet?searchType=search&collectionName=solrsearch_en_collection&q=*
 * Fetching Data from French Solr collection : 
-http://localhost:4502/apps/solrsearchApi/GET.servlet?searchType=search&collectionName=solrsearch_fr_collection&q=*
+http://localhost:4502/bin/solrsearch/GET.servlet?searchType=search&collectionName=solrsearch_fr_collection&q=*
 
 ## Solr Config files
 
