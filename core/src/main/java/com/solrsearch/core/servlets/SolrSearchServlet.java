@@ -27,7 +27,7 @@ import com.solrsearch.core.service.SolrServerConfiguration;
 property={
         Constants.SERVICE_DESCRIPTION + "=Servlet to handle Solr requests from Front end Layer",
         "sling.servlet.methods=" + HttpConstants.METHOD_GET,
-        "sling.servlet.resourceTypes="+ "/bin/solrsearch"
+        "sling.servlet.paths="+ "/bin/solrsearch"
 })
 public class SolrSearchServlet extends SlingSafeMethodsServlet {
 	

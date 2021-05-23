@@ -12,9 +12,8 @@ The main parts of the template are:
 
 ## Servlet Proxy Layer for fetching Solr data
 
-* Fetching Data from English Solr collection : http://localhost:4502/bin/solrsearch/GET.servlet?searchType=search&collectionName=solrsearch_en_collection&q=*
-* Fetching Data from French Solr collection : 
-http://localhost:4502/bin/solrsearch/GET.servlet?searchType=search&collectionName=solrsearch_fr_collection&q=*
+* Fetching Data from English Solr collection : http://localhost:4502/bin/solrsearch?searchType=search&collectionName=solrsearch_en_collection&q=*
+* Fetching Data from French Solr collection : http://localhost:4502/bin/solrsearch?searchType=search&collectionName=solrsearch_fr_collection&q=*
 
 ## Solr Config files
 
