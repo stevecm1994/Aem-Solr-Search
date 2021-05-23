@@ -1,6 +1,6 @@
 # AEM Solr Project for Indexing/Updating/Deleting Data from Solr 
 
-This is a project template for AEM-based applications. It is intended as a best-practice set of examples as well as a potential starting point to develop your own functionality.
+This is a project which implements end to end flow for indexing/deleting/updating/retrieving data from solr server integrating with AEM. This project majorly contains backend OSGI modules to cater the above functionalities.
 
 ## Modules
 
@@ -15,6 +15,13 @@ The main parts of the template are:
 * Fetching Data from English Solr collection : http://localhost:4502/apps/solrsearchApi/GET.servlet?searchType=search&collectionName=solrsearch_en_collection&q=*
 * Fetching Data from French Solr collection : 
 http://localhost:4502/apps/solrsearchApi/GET.servlet?searchType=search&collectionName=solrsearch_fr_collection&q=*
+
+## Solr Config files
+
+solrconfig folder contain necessary solr configuration files for creation of both French and English collections .
+How to Use  ? : After setting up solr server , copy the configuration files (managed-schema,solrconfig) to the conf folder of the respective core and reload the core for the changes to reflect.
+*managed-schema : Defines data variables we are indexing to Solr using OSGI service
+*solrconfig : Defines the default as well as custom handlers in Solr like Search Handler , Spell Check Handler and so on.
 
 
 ## How to build
