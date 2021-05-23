@@ -1,4 +1,4 @@
-#AEM Solr Project for Indexing/Updating/Deleting Data from Solr 
+# AEM Solr Project for Indexing/Updating/Deleting Data from Solr 
 
 This is a project template for AEM-based applications. It is intended as a best-practice set of examples as well as a potential starting point to develop your own functionality.
 
@@ -9,6 +9,13 @@ The main parts of the template are:
 * core: Java bundle containing all core functionality like OSGi services, listeners or schedulers, as well as component-related Java code such as servlets or request filters.
 * ui.apps: contains the /apps (and /etc) parts of the project, ie JS&CSS clientlibs, components, templates, runmode specific configs as well as Hobbes-tests
 * ui.content: contains sample content using the components from the ui.apps
+
+## Servlet Proxy Layer
+
+* Fetching Data from English Solr collection : http://localhost:4502/apps/solrsearchApi/GET.servlet?searchType=search&collectionName=solrsearch_en_collection&q=*
+* Fetching Data from French Solr collection : 
+http://localhost:4502/apps/solrsearchApi/GET.servlet?searchType=search&collectionName=solrsearch_fr_collection&q=*
+
 
 ## How to build
 
